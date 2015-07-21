@@ -20,6 +20,7 @@ require 'gruff/version'
   side_stacked_bar
   side_bar
   accumulator_bar
+  vertical_timeline
 
   scene
 
