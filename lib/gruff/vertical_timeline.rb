@@ -2,15 +2,17 @@ require 'gruff'
 
 class Gruff::VerticalTimeline < Gruff::Base
   # Spacing factor applied between bars
-  attr_accessor :bar_spacing, :time_format
+  attr_accessor :bar_spacing, :time_format, :datetime_format, :show_datetime_on_day_start
 
   def initialize(*args)
     super
     @spacing_factor = 0.9
-    @left_margin = 80
     @has_left_labels = false
     @hide_line_numbers = true
     @time_format = '%H:%M'
+    @left_margin = 80
+    @datetime_format = '%d-%m-%Y %H:%M'
+    @show_datetime_on_day_start = false
     @y_axis_increment = 60*60
   end
 
@@ -116,19 +118,30 @@ class Gruff::VerticalTimeline < Gruff::Base
     super
 
     (0..@marker_count).each do |index|
-        y = @graph_top + @graph_height - index.to_f * @increment_scaled
+      y = @graph_top + @graph_height - index.to_f * @increment_scaled
 
-        @d.fill = @font_color
-        @d.font = @font if @font
-        @d.stroke('transparent')
-        @d.pointsize = scale_fontsize(@marker_font_size)
-        @d.gravity = EastGravity
+      @d.fill = @font_color
+      @d.font = @font if @font
+      @d.stroke('transparent')
+      @d.pointsize = scale_fontsize(@marker_font_size)
+      @d.gravity = EastGravity
 
-        # Vertically center with 1.0 for the height
-        @d = @d.annotate_scaled(@base_image,
-          @graph_left - LABEL_MARGIN, 1.0,
-          0.0, y,
-          Time.at(@maximum_value - @y_axis_increment * index).strftime(@time_format), @scale)
+      prev_timestamp = Time.at(@maximum_value - @y_axis_increment * (index + 1))
+      timestamp = Time.at(@maximum_value - @y_axis_increment * index)
+
+      format = @time_format
+      if @show_datetime_on_day_start
+        if timestamp.strftime('%d-%m-%Y') != prev_timestamp.strftime('%d-%m-%Y')
+          format = @datetime_format
+        end
+      end
+
+      # Vertically center with 1.0 for the height
+      @d = @d.annotate_scaled(@base_image,
+        @graph_left - LABEL_MARGIN, 1.0,
+        0.0, y,
+        timestamp.strftime(format), @scale)
+
     end
   end
 
